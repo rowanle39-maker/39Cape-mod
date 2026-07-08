@@ -6,6 +6,7 @@ import org.bukkit.DyeColor;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.block.banner.Pattern;
+import org.bukkit.block.banner.PatternType;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.BannerMeta;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -19,6 +20,8 @@ public class ItemFactory {
 
     public static final NamespacedKey FRAME_KEY = new NamespacedKey("cape39", "frame");
     public static final NamespacedKey CAPE_KEY = new NamespacedKey("cape39", "cape");
+    public static final NamespacedKey BANNER_MATERIAL_KEY = new NamespacedKey("cape39", "banner_material");
+    public static final NamespacedKey BANNER_PATTERNS_KEY = new NamespacedKey("cape39", "banner_patterns");
 
     public static ItemStack createFrame() {
         ItemStack stack = new ItemStack(Material.IRON_INGOT);
@@ -40,6 +43,13 @@ public class ItemFactory {
 
     public static boolean isBanner(ItemStack stack) {
         return stack != null && stack.getType().name().endsWith("_BANNER");
+    }
+
+    public static boolean isCape(ItemStack stack) {
+        if (stack == null || stack.getType() != Material.LEATHER_CHESTPLATE || !stack.hasItemMeta()) {
+            return false;
+        }
+        return stack.getItemMeta().getPersistentDataContainer().has(CAPE_KEY, PersistentDataType.BYTE);
     }
 
     public static ItemStack createCapeFromBanner(ItemStack bannerStack) {
@@ -67,16 +77,66 @@ public class ItemFactory {
 
         meta.getPersistentDataContainer().set(CAPE_KEY, PersistentDataType.BYTE, (byte) 1);
         meta.getPersistentDataContainer().set(
-                new NamespacedKey("cape39", "base_color"),
-                PersistentDataType.STRING,
-                colorName);
+                BANNER_MATERIAL_KEY, PersistentDataType.STRING, bannerStack.getType().name());
         meta.getPersistentDataContainer().set(
-                new NamespacedKey("cape39", "pattern_count"),
-                PersistentDataType.INTEGER,
-                patterns.size());
+                BANNER_PATTERNS_KEY, PersistentDataType.STRING, serializePatterns(patterns));
 
         cape.setItemMeta(meta);
         return cape;
+    }
+
+    public static ItemStack reconstructBannerItemStack(ItemStack capeStack) {
+        if (!capeStack.hasItemMeta()) {
+            return new ItemStack(Material.WHITE_BANNER);
+        }
+        var pdc = capeStack.getItemMeta().getPersistentDataContainer();
+
+        String materialName = pdc.getOrDefault(BANNER_MATERIAL_KEY, PersistentDataType.STRING, "WHITE_BANNER");
+        Material material;
+        try {
+            material = Material.valueOf(materialName);
+        } catch (IllegalArgumentException ex) {
+            material = Material.WHITE_BANNER;
+        }
+
+        ItemStack banner = new ItemStack(material);
+        String patternsData = pdc.getOrDefault(BANNER_PATTERNS_KEY, PersistentDataType.STRING, "");
+        List<Pattern> patterns = deserializePatterns(patternsData);
+
+        if (banner.getItemMeta() instanceof BannerMeta bannerMeta) {
+            bannerMeta.setPatterns(patterns);
+            banner.setItemMeta(bannerMeta);
+        }
+
+        return banner;
+    }
+
+    private static String serializePatterns(List<Pattern> patterns) {
+        StringBuilder sb = new StringBuilder();
+        for (Pattern p : patterns) {
+            if (sb.length() > 0) sb.append(';');
+            sb.append(p.getColor().name()).append(':').append(p.getPattern().name());
+        }
+        return sb.toString();
+    }
+
+    private static List<Pattern> deserializePatterns(String data) {
+        List<Pattern> patterns = new ArrayList<>();
+        if (data == null || data.isEmpty()) {
+            return patterns;
+        }
+        for (String entry : data.split(";")) {
+            if (entry.isEmpty()) continue;
+            String[] parts = entry.split(":");
+            if (parts.length != 2) continue;
+            try {
+                DyeColor color = DyeColor.valueOf(parts[0]);
+                PatternType type = PatternType.valueOf(parts[1]);
+                patterns.add(new Pattern(color, type));
+            } catch (IllegalArgumentException ignored) {
+            }
+        }
+        return patterns;
     }
 
     private static DyeColor dyeColorFromBannerMaterial(Material material) {
