@@ -1,0 +1,6 @@
+name: Cape39
+version: 1.0.0
+main: com.cape39.spigotcape.CapePlugin
+api-version: "1.20"
+author: seninadın
+description: Banner'lardan pelerin yapmayı sağlayan eklenti.
