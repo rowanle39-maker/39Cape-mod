@@ -4,3 +4,7 @@ main: com.cape39.spigotcape.CapePlugin
 api-version: "1.20"
 author: seninadın
 description: Banner'lardan pelerin yapmayı sağlayan eklenti.
+commands:
+  cape39:
+    description: Bir oyuncuya istenen renkte pelerin verir.
+    usage: /cape39 <renk> <oyuncu_adı>
