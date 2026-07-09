@@ -20,12 +20,13 @@ import java.util.UUID;
 
 public class CapeDisplayManager {
 
-    private static final double BACK_OFFSET = 0.30;
-    private static final double HEIGHT_OFFSET = 1.15;
-    private static final float SCALE = 1.0f;
-    private static final float EXTRA_YAW_RADIANS = 0f;
+    private static double backOffset = 0.30;
+    private static double heightOffset = 1.20;
+    private static float scale = 0.8f;
+    private static float extraYawRadians = (float) Math.PI;
 
     private final JavaPlugin plugin;
+    private final Map<UUID, ItemStack> wearing = new HashMap<>();
     private final Map<UUID, ItemDisplay> activeDisplays = new HashMap<>();
     private BukkitTask task;
 
@@ -44,18 +45,29 @@ public class CapeDisplayManager {
         removeAll();
     }
 
+    public boolean toggleWear(Player player, ItemStack capeStack) {
+        UUID uuid = player.getUniqueId();
+        if (wearing.containsKey(uuid)) {
+            wearing.remove(uuid);
+            removeDisplayFor(uuid);
+            return false;
+        } else {
+            wearing.put(uuid, capeStack.clone());
+            return true;
+        }
+    }
+
     private void tick() {
         for (Player player : plugin.getServer().getOnlinePlayers()) {
-            ItemStack chest = player.getInventory().getChestplate();
-            boolean wearingCape = ItemFactory.isCape(chest);
+            ItemStack capeStack = wearing.get(player.getUniqueId());
 
-            if (wearingCape) {
+            if (capeStack != null) {
                 ItemDisplay display = activeDisplays.get(player.getUniqueId());
                 if (display == null || display.isDead()) {
-                    display = spawnDisplay(player, chest);
+                    display = spawnDisplay(player, capeStack);
                     activeDisplays.put(player.getUniqueId(), display);
                 }
-                updateDisplayTransform(display, player, chest);
+                updateDisplayTransform(display, player, capeStack);
             } else {
                 removeDisplayFor(player.getUniqueId());
             }
@@ -68,6 +80,7 @@ public class CapeDisplayManager {
             if (p == null || !p.isOnline()) {
                 entry.getValue().remove();
                 it.remove();
+                wearing.remove(entry.getKey());
             }
         }
     }
@@ -87,11 +100,11 @@ public class CapeDisplayManager {
         display.teleport(loc);
 
         Vector3f translation = new Vector3f(0f, 0f, 0f);
-        Quaternionf leftRotation = new Quaternionf(new AxisAngle4f(EXTRA_YAW_RADIANS, 0f, 1f, 0f));
-        Vector3f scale = new Vector3f(SCALE, SCALE, SCALE);
+        Quaternionf leftRotation = new Quaternionf(new AxisAngle4f(extraYawRadians, 0f, 1f, 0f));
+        Vector3f scaleVec = new Vector3f(scale, scale, scale);
         Quaternionf rightRotation = new Quaternionf();
 
-        display.setTransformation(new Transformation(translation, leftRotation, scale, rightRotation));
+        display.setTransformation(new Transformation(translation, leftRotation, scaleVec, rightRotation));
         display.setItemStack(ItemFactory.reconstructBannerItemStack(capeStack));
     }
 
@@ -99,11 +112,11 @@ public class CapeDisplayManager {
         float yaw = player.getLocation().getYaw();
 
         double radians = Math.toRadians(yaw);
-        double backX = Math.sin(radians) * BACK_OFFSET;
-        double backZ = -Math.cos(radians) * BACK_OFFSET;
+        double backX = Math.sin(radians) * backOffset;
+        double backZ = -Math.cos(radians) * backOffset;
 
         Location result = player.getLocation().clone();
-        result.add(backX, HEIGHT_OFFSET, backZ);
+        result.add(backX, heightOffset, backZ);
         result.setYaw(yaw);
         result.setPitch(0f);
         return result;
@@ -123,5 +136,6 @@ public class CapeDisplayManager {
             }
         }
         activeDisplays.clear();
+        wearing.clear();
     }
 }
