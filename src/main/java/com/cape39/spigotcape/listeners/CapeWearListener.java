@@ -39,9 +39,9 @@ public class CapeWearListener implements Listener {
         boolean nowWearing = capeDisplayManager.toggleWear(player, item);
 
         if (nowWearing) {
-            player.sendActionBar(ChatColor.GREEN + "Pelerin takıldı");
+            player.sendMessage(ChatColor.GREEN + "Pelerin takıldı");
         } else {
-            player.sendActionBar(ChatColor.RED + "Pelerin çıkarıldı");
+            player.sendMessage(ChatColor.RED + "Pelerin çıkarıldı");
         }
     }
 }
