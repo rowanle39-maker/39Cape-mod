@@ -22,7 +22,9 @@ public class CapeDisplayManager {
 
     private static double backOffset = 0.30;
     private static double heightOffset = 1.20;
-    private static float scale = 0.8f;
+    private static float scaleX = 0.55f;
+    private static float scaleY = 1.15f;
+    private static float scaleZ = 0.35f;
     private static float extraYawRadians = (float) Math.PI;
 
     private final JavaPlugin plugin;
@@ -101,7 +103,7 @@ public class CapeDisplayManager {
 
         Vector3f translation = new Vector3f(0f, 0f, 0f);
         Quaternionf leftRotation = new Quaternionf(new AxisAngle4f(extraYawRadians, 0f, 1f, 0f));
-        Vector3f scaleVec = new Vector3f(scale, scale, scale);
+        Vector3f scaleVec = new Vector3f(scaleX, scaleY, scaleZ);
         Quaternionf rightRotation = new Quaternionf();
 
         display.setTransformation(new Transformation(translation, leftRotation, scaleVec, rightRotation));
